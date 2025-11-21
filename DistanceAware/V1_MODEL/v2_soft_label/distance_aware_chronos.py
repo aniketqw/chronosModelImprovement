@@ -218,11 +218,28 @@ class DistanceAwareChronos:
             else:
                 forecast_array = np.array(forecast)[0]
 
-            # Apply soft label smoothing to the forecast samples
-            # This adjusts the distribution to favor values closer to the median
+            # ================================================================
+            # SOFT LABEL SMOOTHING - Gaussian-Weighted Averaging
+            # ================================================================
+            # Analogy: Averaging test scores fairly
+            #
+            # Student scores: [85, 87, 90, 88, 0]
+            #                                  ↑ student was sick (outlier)
+            #
+            # Method 1 (Mean): (85+87+90+88+0)/5 = 70
+            #                  → Unfair! One bad day ruins average
+            #
+            # Method 2 (Median): 87
+            #                    → Fair, but ignores all other scores
+            #
+            # Method 3 (V2 Soft Labels): Weight scores by how "typical" they are
+            #                  → 0 gets very low weight, others get high weight
+            #                  → Result ≈ 88 ✓ (fair AND uses all information)
+            #
+            # Formula: weight = exp(-(distance_from_median)² / (2σ²))
+            # ================================================================
             median_forecast = np.median(forecast_array, axis=0)
 
-            # Soft label adjustment: weight samples by proximity to median
             sigma = 2.0
             adjusted_forecasts = []
             for t in range(horizon):
