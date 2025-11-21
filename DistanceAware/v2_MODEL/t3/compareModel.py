@@ -22,7 +22,7 @@ warnings.filterwarnings('ignore')
 @dataclass
 class BenchmarkConfig:
     """Configuration for benchmark evaluation"""
-    distance_aware_repo: str = "Phoenix21/distance-aware-chronos-t3"  # HuggingFace repo
+    distance_aware_repo: str = "Phoenix21/distance-aware-chronos-t2"  # HuggingFace repo
     original_repo: str = "amazon/chronos-t5-small"
     output_dir: str = "./benchmark_results"
     max_series: int = 500
@@ -378,5 +378,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # nohup python compareModel.py > benchmark.log 2>&1 & echo 'PID: '$!
