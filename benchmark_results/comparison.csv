@@ -1,0 +1,4 @@
+Metric,Distance-Aware,Original,Improvement_%,Winner
+MAE,1318.9441,1304.8421,-1.08,Original
+RMSE,1598.8532,1578.6106,-1.28,Original
+MAPE,24212121.9078,28813791.3036,+15.97,🏆 DA
