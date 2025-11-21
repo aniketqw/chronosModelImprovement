@@ -1,0 +1,9 @@
+torch>=2.0.0
+chronos-forecasting
+numpy
+pandas
+matplotlib
+seaborn
+datasets
+huggingface_hub
+tqdm
