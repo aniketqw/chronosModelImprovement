@@ -40,52 +40,27 @@ class ModelLoader:
         self.orig_model = None
     
     def load_models(self) -> Tuple[object, object]:
-        """Load both models from HuggingFace or local checkpoint"""
+        """Load both models from HuggingFace"""
         print(f"\n{'='*60}\nLoading Models (Device: {self.device})\n{'='*60}")
-        
-        # Load Distance-Aware model
+
+        # Load Distance-Aware Chronos (trained weights in base_model subfolder)
         print(f"1. Distance-Aware Chronos from {self.config.distance_aware_repo}...")
-        from DistanceAware.v2_MODEL.V1.distance_aware_chronos import DistanceAwareChronos
-        from huggingface_hub import hf_hub_download
-        import json
-        
-        # Download config and weights from HuggingFace
-        config_path = hf_hub_download(
-            repo_id=self.config.distance_aware_repo,
-            filename="config.json",
-            repo_type="model"
+        self.da_model = ChronosPipeline.from_pretrained(
+            self.config.distance_aware_repo,
+            subfolder="base_model",
+            device_map=self.device,
+            dtype=torch.float32
         )
-        distance_output_path = hf_hub_download(
-            repo_id=self.config.distance_aware_repo,
-            filename="distance_output.pt",
-            repo_type="model"
-        )
-        
-        # Load config
-        with open(config_path, 'r') as f:
-            da_config = json.load(f)
-        
-        # Initialize model
-        self.da_model = DistanceAwareChronos(
-            model_name=da_config.get('base_model', 'amazon/chronos-t5-small'),
-            num_bins=da_config.get('num_bins', 4096),
-            device=self.device
-        )
-        
-        # Load trained distance output weights
-        state_dict = torch.load(distance_output_path, map_location=self.device)
-        self.da_model.distance_output.load_state_dict(state_dict)
-        
-        print(f"  ✓ Loaded (epoch {da_config.get('training_epoch', 'N/A')}, val_loss: {da_config.get('val_loss', 0):.4f})")
-        
+        print("  ✓ Loaded")
+
         # Load Original Chronos
-        print("2. Original Chronos...")
+        print(f"2. Original Chronos from {self.config.original_repo}...")
         self.orig_model = ChronosPipeline.from_pretrained(
             self.config.original_repo,
             device_map=self.device,
             dtype=torch.float32
         )
-        
+
         print("✓ Models loaded successfully\n")
         return self.da_model, self.orig_model
 
@@ -174,32 +149,26 @@ class BenchmarkEvaluator:
             })
             
             # Evaluate both models
-            da_pred = self._forecast(self.da_model, context, horizon, is_da=True)
-            orig_pred = self._forecast(self.orig_model, context, horizon, is_da=False)
+            da_pred = self._forecast(self.da_model, context, horizon)
+            orig_pred = self._forecast(self.orig_model, context, horizon)
             
             results['da'].append(self._compute_metrics(da_pred, truth))
             results['orig'].append(self._compute_metrics(orig_pred, truth))
         
         return results
     
-    def _forecast(self, model, context: np.ndarray, horizon: int, is_da: bool) -> np.ndarray:
-        """Generate forecast"""
+    def _forecast(self, model, context: np.ndarray, horizon: int) -> np.ndarray:
+        """Generate forecast using ChronosPipeline"""
         try:
             with torch.no_grad():
-                if is_da:
-                    forecast = model.predict(context, horizon, self.config.num_samples)
-                    return forecast
-                else:
-                    # Original Chronos expects predictions through pipeline
-                    forecast = model.predict(
-                        torch.tensor(context[np.newaxis, :], dtype=torch.float32),
-                        prediction_length=horizon,
-                        num_samples=self.config.num_samples
-                    )
-                    # Take median across samples
-                    return np.median(forecast.cpu().numpy()[0], axis=0)
+                forecast = model.predict(
+                    torch.tensor(context[np.newaxis, :], dtype=torch.float32),
+                    prediction_length=horizon,
+                    num_samples=self.config.num_samples
+                )
+                # Take median across samples
+                return np.median(forecast.cpu().numpy()[0], axis=0)
         except Exception as e:
-            # Print first 5 errors for debugging
             if not hasattr(self, '_error_count'):
                 self._error_count = 0
             if self._error_count < 5:

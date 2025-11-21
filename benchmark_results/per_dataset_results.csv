@@ -1,0 +1,7 @@
+dataset,DA_MAE,Orig_MAE,DA_RMSE,Orig_RMSE,DA_Wins,Total,Win_Rate_%,MAE_Improvement_%,Winner
+monash_cif_2016,68.2328,69.3435,81.1008,81.8163,27,48,56.2,1.6,🏆 DA
+monash_tourism_monthly,2480.4136,2502.1775,3112.7169,3133.5735,194,365,53.2,0.87,🏆 DA
+m4_quarterly,344.5063,343.3962,413.915,412.7387,234,500,46.8,-0.32,Original
+monash_tourism_quarterly,2417.3804,2381.553,2795.7276,2762.548,141,302,46.7,-1.5,Original
+monash_fred_md,722.9972,721.9556,900.0938,901.6813,40,107,37.4,-0.14,Original
+m4_yearly,417.0776,407.1723,470.1001,459.3504,53,162,32.7,-2.43,Original
