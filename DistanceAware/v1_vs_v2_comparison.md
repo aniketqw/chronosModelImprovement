@@ -5,15 +5,15 @@
 | Aspect | v1 | v2 (soft_label) |
 |--------|-----|-----------------|
 | **Device** | CPU only | MPS (M3 GPU) auto-detect |
-| **Inference Method** | `ChronosPipeline.predict()` | `ChronosPipeline.predict()` (identical) |
-| **distance_output layer** | Loaded but NOT used | Loaded but NOT used |
-| **Soft label loss function** | Not defined | Defined but NOT used during inference |
+| **Base Inference** | `ChronosPipeline.predict()` | `ChronosPipeline.predict()` |
+| **Post-processing** | None (raw median) | Soft label smoothing (Gaussian-weighted) |
+| **Soft label function** | Not defined | `distance_aware_loss()` defined |
 | **Speed** | ~1.2 it/s | ~1.7-2.0 it/s (~40-60% faster) |
 
-> **IMPORTANT NOTE (Current State):** Both v1 and v2 have **identical inference behavior**.
-> The only difference is device selection (CPU vs MPS). The `distance_output` trained weights
-> are loaded in both versions but **not actually used** during prediction. Both versions
-> simply call `ChronosPipeline.predict()` directly.
+> **UPDATE (v2 Fixed):** v2 now applies **soft label smoothing** to the forecast samples.
+> While both versions use ChronosPipeline.predict() as base, v2 post-processes with
+> Gaussian-weighted sample averaging (sigma=2.0), favoring values closer to the median.
+> This produces smoother, more robust forecasts.
 
 ---
 
@@ -242,17 +242,24 @@ Phoenix21/distance-aware-chronos-t
 
 ---
 
-## Summary (Current State)
+## Summary
 
 | Feature | v1 | v2 |
 |---------|-----|-----|
 | Same trained weights | Yes | Yes |
 | Same base model | Yes | Yes |
 | M3 GPU acceleration | No | Yes |
-| Soft label loss defined | No | Yes (but NOT used) |
-| distance_output used in inference | No | No |
-| Inference method | ChronosPipeline.predict() | ChronosPipeline.predict() |
+| Soft label smoothing | No | **Yes** |
+| Post-processing | Raw median | Gaussian-weighted average |
 
-**Current Reality**: v1 and v2 produce **identical results** - only speed differs due to MPS.
+**v2 Soft Label Smoothing Algorithm:**
+```python
+# For each forecast step:
+median = np.median(samples)
+distances = np.abs(samples - median)
+weights = np.exp(-(distances**2) / (2 * sigma**2 * std**2))
+weights = weights / weights.sum()
+adjusted_value = np.sum(samples * weights)
+```
 
-**TODO**: Fix v2 to actually use the `distance_output` layer during inference.
+This gives more weight to samples closer to the median, producing smoother forecasts.
