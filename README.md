@@ -20,3 +20,8 @@ Distance-aware enhancement for Chronos model.
 | RMSE | 1593.91 | 1584.71 | Original |
 
 **Win Rate:** Distance-Aware wins 739/1484 series (49.8%)
+
+## Pathways to beat the baseline
+
+See [`docs/PATHWAYS_TO_BEAT_CHRONOS.md`](docs/PATHWAYS_TO_BEAT_CHRONOS.md) for the review of the current results and ten ordered pathways (P0 to P9), each with steps, acceptance criteria and effort.
+Run `python docs/evidence/verify_claims.py` to reproduce the checks behind that review (numpy only, offline).
